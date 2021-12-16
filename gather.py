@@ -5,6 +5,7 @@ import sys
 import shlex
 import sqlite3
 import argparse
+import tempfile
 import datetime as dt
 import subprocess as sp
 from select import select, PIPE_BUF
@@ -29,25 +30,31 @@ CREATE VIEW options AS
     SELECT DISTINCT compressor, options FROM tests;
 
 CREATE TABLE results (
-    machine      TEXT         NOT NULL,
-    arch         TEXT         NOT NULL,
-    compressor   TEXT         NOT NULL,
-    options      TEXT         NOT NULL,
-    level        TEXT         NOT NULL,
-    succeeded    INTEGER      NOT NULL DEFAULT 0,
-    elapsed      NUMERIC(8,2) NOT NULL,
-    max_resident INTEGER      NOT NULL,
-    ratio        NUMERIC(8,7) NOT NULL,
+    machine          TEXT         NOT NULL,
+    arch             TEXT         NOT NULL,
+    compressor       TEXT         NOT NULL,
+    options          TEXT         NOT NULL,
+    level            TEXT         NOT NULL,
+    succeeded        INTEGER      NOT NULL DEFAULT 0,
+    comp_duration    NUMERIC(8,2) NOT NULL,
+    comp_max_mem     INTEGER      NOT NULL,
+    decomp_duration  NUMERIC(8,2) NOT NULL,
+    decomp_max_mem   INTEGER      NOT NULL,
+    ratio            NUMERIC(8,7) NOT NULL,
 
     CONSTRAINT compression_pk
         PRIMARY KEY (machine, arch, compressor, options, level),
     CONSTRAINT compression_options_fk
         FOREIGN KEY (compressor, options, level)
         REFERENCES tests (compressor, options, level) ON DELETE CASCADE,
-    CONSTRAINT compression_succeeded_ck CHECK (succeeded IN (0, 1)),
-    CONSTRAINT compression_elapsed_ck CHECK (elapsed >= 0.0),
-    CONSTRAINT compression_resident_ck CHECK (max_resident >= 0),
-    CONSTRAINT compression_ratio_ck CHECK (ratio >= 0)
+    CONSTRAINT compression_valid_ck CHECK (
+        succeeded IN (0, 1)
+        AND comp_duration >= 0.0
+        AND decomp_duration >= 0.0
+        AND comp_max_mem >= 0
+        AND decomp_max_mem >= 0
+        AND ratio >= 0
+    )
 );
 
 CREATE INDEX results_options ON results(compressor, options, level);
@@ -89,7 +96,7 @@ EXCEPT
 SELECT machine, arch, compressor, options, level FROM results
 """
 
-insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 
 def get_db(filename):
@@ -107,34 +114,37 @@ def get_db(filename):
     return conn
 
 
+def parse_time_mem(s):
+    duration, mem, *_ = s.split()
+    duration_m, duration = duration.split(':', 1)
+    duration_s, duration_f = duration.split('.', 1)
+    elapsed = dt.timedelta(
+        minutes=int(duration_m),
+        seconds=int(duration_s),
+        microseconds=int(duration_f) * 10 ** (6 - len(duration_f)))
+    return elapsed.total_seconds(), int(mem) * 1024
+
+
 def run_test(compressor, options, level, filename):
-    with io.open(filename, 'rb') as data:
-        input_size = data.seek(0, io.SEEK_END)
-        data.seek(0)
+    with io.open(filename, 'rb') as input_stream, \
+            tempfile.TemporaryFile() as output_stream:
         cmdline = ['time', '-f', '%E %M', compressor, level]
         cmdline += shlex.split(options)
         print(shlex.join(cmdline), file=sys.stderr)
-        proc = sp.Popen(
-            cmdline, bufsize=0,
-            stdin=data, stdout=sp.PIPE, stderr=sp.PIPE)
-        output_size = 0
-        while True:
-            buf = proc.stdout.read(PIPE_BUF)
-            if not buf:
-                break
-            output_size += len(buf)
-        output = proc.stderr.read().decode('ascii')
-        proc.wait()
-        if proc.returncode != 0:
-            raise RuntimeError('Compression failed')
-        duration, max_res, *_ = output.split()
-        duration_m, duration = duration.split(':', 1)
-        duration_s, duration_f = duration.split('.', 1)
-        elapsed = dt.timedelta(
-            minutes=int(duration_m),
-            seconds=int(duration_s),
-            microseconds=int(duration_f) * 10 ** (6 - len(duration_f)))
-        return elapsed.total_seconds(), output_size / input_size, int(max_res)
+        result = sp.run(
+            cmdline, stdin=input_stream, stdout=output_stream, stderr=sp.PIPE,
+            check=True, timeout=300)
+        comp_time, comp_mem = parse_time_mem(result.stderr.decode('ascii'))
+        input_size = input_stream.tell()
+        output_size = output_stream.tell()
+        output_stream.seek(0)
+        cmdline = ['time', '-f', '%E %M', compressor, '-d']
+        print(shlex.join(cmdline), file=sys.stderr)
+        result = sp.run(
+            cmdline, stdin=output_stream, stdout=sp.DEVNULL, stderr=sp.PIPE,
+            check=True, timeout=300)
+        decomp_time, decomp_mem = parse_time_mem(result.stderr.decode('ascii'))
+        return comp_time, comp_mem, decomp_time, decomp_mem, output_size / input_size
 
 
 def main(args=None):
@@ -171,18 +181,18 @@ def main(args=None):
 
     for row in db.execute(query_sql, (config.machine, config.arch)):
         try:
-            elapsed, ratio, max_resident = run_test(
+            comp_time, comp_mem, decomp_time, decomp_mem, ratio = run_test(
                 row['compressor'], row['options'], row['level'], config.data)
         except RuntimeError:
             results = (
                 config.machine, config.arch,
                 row['compressor'], row['options'], row['level'],
-                False, 0.0, 0, 0)
+                False, 0.0, 0, 0.0, 0, 0)
         else:
             results = (
                 config.machine, config.arch,
                 row['compressor'], row['options'], row['level'],
-                True, elapsed, max_resident, ratio)
+                True, comp_time, comp_mem, decomp_time, decomp_mem, ratio)
         with db:
             db.execute(insert_sql, results)
 

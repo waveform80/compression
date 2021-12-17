@@ -9,8 +9,8 @@ architectures and machine sizes.
 Requirements
 ============
 
-You will need the following packages installed if you wish to extend the
-database with ``gather.py``:
+You will need the following packages installed if you wish to perform data
+collection with the ``gather.py`` script:
 
 * python3
 * lz4
@@ -95,35 +95,40 @@ results
 
 This is the "main" table, storing the results of all compression runs. It is
 keyed by the machine's label, architecture, the compressor being tested, and
-its command line options. The non-key attributes are a boolean (0 or 1)
-indicating whether the test succeeded, the number of seconds elapsed during
-the test, the maximum resident memory used (in kilobytes), and the
-compression ratio achieved (a value > 0.0 and hopefully < 1).
+its command line options. The non-key attributes track the success of the
+operation(s), the time they took, the maximum resident memory used, and the
+compression ratio achieved.
 
-+--------------+--------------+-------------------------------------------+
-| Name         | Type         | Description                               |
-+==============+==============+===========================================+
-| *machine*    | TEXT         | The label provided on by ``--machine`` on |
-|              |              | the command line                          |
-+--------------+--------------+-------------------------------------------+
-| *arch*       | TEXT         | The ``dpkg`` architecture of the machine  |
-+--------------+--------------+-------------------------------------------+
-| *compressor* | TEXT         | The name of the compressor                |
-+--------------+--------------+-------------------------------------------+
-| *options*    | TEXT         | The options to execute the compressor     |
-|              |              | with (if any)                             |
-+--------------+--------------+-------------------------------------------+
-| *level*      | TEXT         | The compression level to use              |
-+--------------+--------------+-------------------------------------------+
-| succeeded    | INTEGER      | 1 if the compression run succeeded, and 0 |
-|              |              | if it failed                              |
-+--------------+--------------+-------------------------------------------+
-| elapsed      | NUMERIC(8,2) | The number of seconds execution took      |
-|              |              | (wall clock time)                         |
-+--------------+--------------+-------------------------------------------+
-| max_resident | INTEGER      | The maximum resident memory during        |
-|              |              | execution, in kilobytes                   |
-+--------------+--------------+-------------------------------------------+
-| ratio        | NUMERIC(8,7) | The compression ratio achieved calculated |
-|              |              | trivially as output_size / input_size     |
-+--------------+--------------+-------------------------------------------+
++-----------------+--------------+-------------------------------------------+
+| Name            | Type         | Description                               |
++=================+==============+===========================================+
+| *machine*       | TEXT         | The label provided on by ``--machine`` on |
+|                 |              | the command line                          |
++-----------------+--------------+-------------------------------------------+
+| *arch*          | TEXT         | The ``dpkg`` architecture of the machine  |
++-----------------+--------------+-------------------------------------------+
+| *compressor*    | TEXT         | The name of the compressor                |
++-----------------+--------------+-------------------------------------------+
+| *options*       | TEXT         | The options to execute the compressor     |
+|                 |              | with (if any)                             |
++-----------------+--------------+-------------------------------------------+
+| *level*         | TEXT         | The compression level to use              |
++-----------------+--------------+-------------------------------------------+
+| succeeded       | INTEGER      | 1 if the compression run succeeded, and 0 |
+|                 |              | if it failed                              |
++-----------------+--------------+-------------------------------------------+
+| comp_duration   | NUMERIC(8,2) | The number of seconds compression took    |
+|                 |              | (wall clock time)                         |
++-----------------+--------------+-------------------------------------------+
+| comp_max_mem    | INTEGER      | The maximum resident memory during        |
+|                 |              | compression, in bytes                     |
++-----------------+--------------+-------------------------------------------+
+| decomp_duration | NUMERIC(8,2) | The number of seconds decompression took  |
+|                 |              | (wall clock time)                         |
++-----------------+--------------+-------------------------------------------+
+| decomp_max_mem  | INTEGER      | The maximum resident memory during        |
+|                 |              | decompression, in bytes                   |
++-----------------+--------------+-------------------------------------------+
+| ratio           | NUMERIC(8,7) | The compression ratio achieved calculated |
+|                 |              | trivially as output_size / input_size     |
++-----------------+--------------+-------------------------------------------+

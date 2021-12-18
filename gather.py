@@ -40,7 +40,8 @@ CREATE TABLE results (
     comp_max_mem     INTEGER      NOT NULL,
     decomp_duration  NUMERIC(8,2) NOT NULL,
     decomp_max_mem   INTEGER      NOT NULL,
-    ratio            NUMERIC(8,7) NOT NULL,
+    input_size       INTEGER      NOT NULL,
+    output_size      INTEGER      NOT NULL,
 
     CONSTRAINT compression_pk
         PRIMARY KEY (machine, arch, compressor, options, level),
@@ -53,23 +54,29 @@ CREATE TABLE results (
         AND decomp_duration >= 0.0
         AND comp_max_mem >= 0
         AND decomp_max_mem >= 0
-        AND ratio >= 0
+        AND input_size >= 0
+        AND output_size >= 0
     )
 );
 
 CREATE INDEX results_options ON results(compressor, options, level);
 """
 
+insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
 populate_sql = """
 WITH RECURSIVE
 c(compressor, options, min_level, max_level) AS (
     VALUES
-        ('zstd', '',    1, 19),
-        ('zstd', '-T0', 1, 19),
-        ('gzip', '',    1, 9),
-        ('lz4',  '',    1, 9),
-        ('xz',   '',    0, 9),
-        ('xz',   '-e',  0, 9)
+        ('zstd',  '',    1, 19),
+        ('zstd',  '-T0', 1, 19),
+        ('gzip',  '',    1, 9),
+        ('lz4',   '',    1, 12),
+        ('xz',    '',    0, 9),
+        ('xz',    '-e',  0, 9),
+        ('bzip2', '-s',  1, 9),
+        ('bzip2', '',    1, 9),
+        ('lzip',  '',    0, 9)
 ),
 t(level, option) AS (
     VALUES (0, '-0')
@@ -95,8 +102,6 @@ SELECT machine, arch, compressor, options, level FROM all_runs
 EXCEPT
 SELECT machine, arch, compressor, options, level FROM results
 """
-
-insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 
 def get_db(filename):
@@ -144,7 +149,10 @@ def run_test(compressor, options, level, filename):
             cmdline, stdin=output_stream, stdout=sp.DEVNULL, stderr=sp.PIPE,
             check=True, timeout=300)
         decomp_time, decomp_mem = parse_time_mem(result.stderr.decode('ascii'))
-        return comp_time, comp_mem, decomp_time, decomp_mem, output_size / input_size
+        return (
+            comp_time, comp_mem,
+            decomp_time, decomp_mem,
+            input_size, output_size)
 
 
 def main(args=None):
@@ -180,19 +188,15 @@ def main(args=None):
             return 1
 
     for row in db.execute(query_sql, (config.machine, config.arch)):
+        key = (config.machine, config.arch, 
+               row['compressor'], row['options'], row['level'])
         try:
-            comp_time, comp_mem, decomp_time, decomp_mem, ratio = run_test(
-                row['compressor'], row['options'], row['level'], config.data)
+            attrs = run_test(row['compressor'], row['options'], row['level'],
+                             config.data)
         except RuntimeError:
-            results = (
-                config.machine, config.arch,
-                row['compressor'], row['options'], row['level'],
-                False, 0.0, 0, 0.0, 0, 0)
+            results = key + (False, 0.0, 0, 0.0, 0, 0, 0)
         else:
-            results = (
-                config.machine, config.arch,
-                row['compressor'], row['options'], row['level'],
-                True, comp_time, comp_mem, decomp_time, decomp_mem, ratio)
+            results = key + (True,) + attrs
         with db:
             db.execute(insert_sql, results)
 

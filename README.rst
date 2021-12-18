@@ -129,6 +129,7 @@ compression ratio achieved.
 | decomp_max_mem  | INTEGER      | The maximum resident memory during        |
 |                 |              | decompression, in bytes                   |
 +-----------------+--------------+-------------------------------------------+
-| ratio           | NUMERIC(8,7) | The compression ratio achieved calculated |
-|                 |              | trivially as output_size / input_size     |
+| input_size      | INTEGER      | The size of the input file provided       |
++-----------------+--------------+-------------------------------------------+
+| output_size     | INTEGER      | The size of the compressed output         |
 +-----------------+--------------+-------------------------------------------+

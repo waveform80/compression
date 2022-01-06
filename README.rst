@@ -26,7 +26,11 @@ analysis in ``analysis.ipynb``:
 * jupyter-notebook
 
 Once installed, simply run ``jupyter notebook`` in your clone of the repo, and
-select ``analysis.ipynb`` in the browser window that opens.
+select ``analysis.ipynb`` in the browser window that opens. Depending on the
+version of jupyter available, you may need to run the following to squash the
+"Widget Javascript not detected" warnings:
+
+    $ pip3 install --user ipympl
 
 
 Data Gathering

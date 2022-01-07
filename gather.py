@@ -88,6 +88,8 @@ t(level, option) AS (
 INSERT OR IGNORE INTO tests
     SELECT c.compressor, c.options, t.option
     FROM c JOIN t ON t.level BETWEEN c.min_level AND c.max_level
+
+INSERT INTO tests VALUES ('cat', '', '');
 """
 
 query_sql = """
@@ -133,6 +135,11 @@ def parse_time_mem(s):
 def run_test(compressor, options, level, filename):
     with io.open(filename, 'rb') as input_stream, \
             tempfile.TemporaryFile() as output_stream:
+        if compressor == 'cat':
+            # Make an exception if it's just cat as no "compressor" would
+            # actually be run in this case anyway
+            input_stream.seek(0, io.SEEK_END)
+            return (0.0, 0, 0.0, 0, input_stream.tell(), input_stream.tell())
         cmdline = ['time', '-f', '%E %M', compressor, level]
         cmdline += shlex.split(options)
         print(shlex.join(cmdline), file=sys.stderr)
@@ -188,7 +195,7 @@ def main(args=None):
             return 1
 
     for row in db.execute(query_sql, (config.machine, config.arch)):
-        key = (config.machine, config.arch, 
+        key = (config.machine, config.arch,
                row['compressor'], row['options'], row['level'])
         try:
             attrs = run_test(row['compressor'], row['options'], row['level'],

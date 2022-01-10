@@ -132,7 +132,7 @@ def parse_time_mem(s):
     return elapsed.total_seconds(), int(mem) * 1024
 
 
-def run_test(compressor, options, level, filename):
+def run_test(compressor, options, level, filename, timeout=None):
     with io.open(filename, 'rb') as input_stream, \
             tempfile.TemporaryFile() as output_stream:
         if compressor == 'cat':
@@ -145,7 +145,7 @@ def run_test(compressor, options, level, filename):
         print(shlex.join(cmdline), file=sys.stderr)
         result = sp.run(
             cmdline, stdin=input_stream, stdout=output_stream, stderr=sp.PIPE,
-            check=True)
+            check=True, timeout=timeout)
         comp_time, comp_mem = parse_time_mem(result.stderr.decode('ascii'))
         input_size = input_stream.tell()
         output_size = output_stream.tell()
@@ -154,7 +154,7 @@ def run_test(compressor, options, level, filename):
         print(shlex.join(cmdline), file=sys.stderr)
         result = sp.run(
             cmdline, stdin=output_stream, stdout=sp.DEVNULL, stderr=sp.PIPE,
-            check=True)
+            check=True, timeout=timeout)
         decomp_time, decomp_mem = parse_time_mem(result.stderr.decode('ascii'))
         return (
             comp_time, comp_mem,
@@ -170,6 +170,9 @@ def main(args=None):
     parser.add_argument(
         '-d', '--database', default='compression.db',
         help="The name of the database to populate (default: %(default)s)")
+    parser.add_argument(
+        '-t', '--timeout', default=None, type=int,
+        help="The timeout for each run of a compressor (default: no timeout)")
     parser.add_argument(
         'data',
         help="The filename of the (uncompressed) data to use")
@@ -199,7 +202,7 @@ def main(args=None):
                row['compressor'], row['options'], row['level'])
         try:
             attrs = run_test(row['compressor'], row['options'], row['level'],
-                             config.data)
+                             config.data, timeout=config.timeout)
         except RuntimeError:
             results = key + (False, 0.0, 0, 0.0, 0, 0, 0)
         else:

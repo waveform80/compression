@@ -87,9 +87,9 @@ t(level, option) AS (
 )
 INSERT OR IGNORE INTO tests
     SELECT c.compressor, c.options, t.option
-    FROM c JOIN t ON t.level BETWEEN c.min_level AND c.max_level
+    FROM c JOIN t ON t.level BETWEEN c.min_level AND c.max_level;
 
-INSERT INTO tests VALUES ('cat', '', '');
+INSERT OR IGNORE INTO tests VALUES ('cat', '', '');
 """
 
 query_sql = """

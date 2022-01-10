@@ -17,6 +17,7 @@ collection with the ``gather.py`` script:
 * xz-utils
 * gzip
 * zstd
+* lzip
 
 You will need the following packages installed to read (and play with) the
 analysis in ``analysis.ipynb``:

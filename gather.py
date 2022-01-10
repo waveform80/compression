@@ -123,12 +123,23 @@ def get_db(filename):
 
 def parse_time_mem(s):
     duration, mem, *_ = s.split()
-    duration_m, duration = duration.split(':', 1)
-    duration_s, duration_f = duration.split('.', 1)
+    parts = duration.split(':')
+    if len(parts) == 3:
+        hrs, mins, secs = parts
+    elif len(parts) == 2:
+        hrs = '0'
+        mins, secs = parts
+    else:
+        raise ValueError('unexpected number of : separated parts')
+    if '.' in secs:
+        secs, ms = secs.split('.', 1)
+    else:
+        ms = '0'
     elapsed = dt.timedelta(
-        minutes=int(duration_m),
-        seconds=int(duration_s),
-        microseconds=int(duration_f) * 10 ** (6 - len(duration_f)))
+        hours=int(hrs),
+        minutes=int(mins),
+        seconds=int(secs),
+        microseconds=int(ms) * 10 ** (6 - len(ms)))
     return elapsed.total_seconds(), int(mem) * 1024
 
 

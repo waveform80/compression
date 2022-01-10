@@ -145,7 +145,7 @@ def run_test(compressor, options, level, filename):
         print(shlex.join(cmdline), file=sys.stderr)
         result = sp.run(
             cmdline, stdin=input_stream, stdout=output_stream, stderr=sp.PIPE,
-            check=True, timeout=300)
+            check=True)
         comp_time, comp_mem = parse_time_mem(result.stderr.decode('ascii'))
         input_size = input_stream.tell()
         output_size = output_stream.tell()
@@ -154,7 +154,7 @@ def run_test(compressor, options, level, filename):
         print(shlex.join(cmdline), file=sys.stderr)
         result = sp.run(
             cmdline, stdin=output_stream, stdout=sp.DEVNULL, stderr=sp.PIPE,
-            check=True, timeout=300)
+            check=True)
         decomp_time, decomp_mem = parse_time_mem(result.stderr.decode('ascii'))
         return (
             comp_time, comp_mem,

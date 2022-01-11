@@ -68,15 +68,20 @@ populate_sql = """
 WITH RECURSIVE
 c(compressor, options, min_level, max_level) AS (
     VALUES
-        ('zstd',  '',    1, 19),
-        ('zstd',  '-T0', 1, 19),
-        ('gzip',  '',    1, 9),
-        ('lz4',   '',    1, 12),
-        ('xz',    '',    0, 9),
-        ('xz',    '-e',  0, 9),
-        ('bzip2', '-s',  1, 9),
-        ('bzip2', '',    1, 9),
-        ('lzip',  '',    0, 9)
+        ('zstd',    '',       1, 19),
+        ('zstd',    '-T0',    1, 19),
+        ('gzip',    '',       1, 9),
+        ('pigz',    '',       1, 9),
+        ('lz4',     '',       1, 12),
+        ('xz',      '',       0, 9),
+        ('xz',      '-e',     0, 9),
+        ('xz',      '-T0',    0, 9),
+        ('xz',      '-e -T0', 0, 9),
+        ('bzip2',   '-s',     1, 9),
+        ('bzip2',   '',       1, 9),
+        ('lbzip2',  '',       1, 9),
+        ('lzip',    '',       0, 9),
+        ('plzip',   '',       0, 9)
 ),
 t(level, option) AS (
     VALUES (0, '-0')

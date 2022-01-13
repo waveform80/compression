@@ -47,17 +47,25 @@ smaller machines (e.g. a Pi Zero 2 or 3A+ which only has 512MB of RAM).
 The ``gather.py`` script was used to measure the aforementioned parameters. The
 typical method of execution (on a fully updated Jammy image) was to extract the
 current ``initrd.img`` archive from the boot partition, and run the
-``gather.py`` script with a suitable machine label. For example::
+``gather.py`` script with a suitable machine label.
+
+Extracting the ``initrd.img`` is relatively trivial on *most* platforms, but
+on ``amd64`` some care must be taken as there's typically an (uncompressed)
+early initrd with processor microcode at the start. The following method is
+recommended::
 
     $ git clone https://github.com/waveform80/compression
     $ cd compression
-    $ zstdcat $(find /boot -name "initrd.img") > initrd.cpio
+    $ unmkinitramfs /boot/initrd.img-$(uname -r) initrd/
+    $ pushd initrd; find | cpio -o -H newc > ../initrd.cpio; popd
+    $ rm -fr initrd/
     $ ./gather.py initrd.cpio --machine "My Machine with 16GB RAM"
 
 Provide some appropriate description with the ``--machine`` switch. Before the
 run begins, the script also checks that all compressors to be tested are
 executable and will prompt you to install any that are missing (you may need to
-install ``lz4`` as that is not currently seeded).
+install ``lz4``, ``lzip``, ``pigz``, and ``plzip`` as they are not currently
+seeded).
 
 The script is sufficiently intelligent not to re-run tests that already exist
 in the database for the specified machine label. This helps dealing with the

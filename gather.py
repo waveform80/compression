@@ -215,8 +215,9 @@ def main(args=None):
         try:
             sp.run([row['compressor']], stdin=sp.DEVNULL, stdout=sp.DEVNULL,
                    check=True)
-        except sp.CalledProcessError:
-            print(f'Please install missing {compressor}', file=sys.stderr)
+        except (FileNotFoundError, sp.CalledProcessError):
+            print(f"Please install missing {row['compressor']}",
+                  file=sys.stderr)
             return 1
 
     if config.reset:

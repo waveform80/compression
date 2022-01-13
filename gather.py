@@ -64,6 +64,8 @@ CREATE INDEX results_options ON results(compressor, options, level);
 
 insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
+reset_sql = "DELETE FROM results WHERE machine = ? AND arch = ?"
+
 populate_sql = """
 WITH RECURSIVE
 c(compressor, options, min_level, max_level) AS (
@@ -190,6 +192,10 @@ def main(args=None):
         '-t', '--timeout', default=None, type=int,
         help="The timeout for each run of a compressor (default: no timeout)")
     parser.add_argument(
+        '-r', '--reset', action='store_true',
+        help="If specified, wipe all results for --machine from the database "
+        "and re-run them from the beginning")
+    parser.add_argument(
         'data',
         help="The filename of the (uncompressed) data to use")
 
@@ -213,6 +219,8 @@ def main(args=None):
             print(f'Please install missing {compressor}', file=sys.stderr)
             return 1
 
+    if config.reset:
+        db.execute(reset_sql, (config.machine, config.arch))
     for row in db.execute(query_sql, (config.machine, config.arch)):
         key = (config.machine, config.arch,
                row['compressor'], row['options'], row['level'])

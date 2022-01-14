@@ -228,7 +228,7 @@ def main(args=None):
         try:
             attrs = run_test(row['compressor'], row['options'], row['level'],
                              config.data, timeout=config.timeout)
-        except RuntimeError:
+        except sp.CalledProcessError:
             results = key + (False, 0.0, 0, 0.0, 0, 0, 0)
         else:
             results = key + (True,) + attrs

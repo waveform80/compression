@@ -60,6 +60,30 @@ CREATE TABLE results (
 );
 
 CREATE INDEX results_options ON results(compressor, options, level);
+
+CREATE VIEW analysis AS
+SELECT
+    machine,
+    arch,
+    compressor,
+    options,
+    level,
+    succeeded,
+    comp_duration,
+    comp_max_mem,
+    decomp_duration,
+    decomp_max_mem,
+    input_size,
+    output_size,
+    100.0 * output_size / input_size AS comp_ratio,
+    machine || ' (' || arch || ')' AS machine_arch,
+    compressor ||
+    CASE WHEN options = '' THEN '' ELSE ' ' || options END AS compressor_options,
+    compressor ||
+    CASE WHEN options = '' THEN '' ELSE ' ' || options END ||
+    CASE WHEN level = '' THEN '' ELSE ' ' || level END AS command_line,
+    CASE level WHEN '' THEN 0 ELSE -CAST(level AS INT) END AS level_order
+FROM results;
 """
 
 insert_sql = "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

@@ -16,8 +16,11 @@ collection with the ``gather.py`` script:
 * lz4
 * xz-utils
 * gzip
+* pigz
 * zstd
 * lzip
+* plzip
+* lbzip2
 
 You will need the following packages installed to read (and play with) the
 analysis in ``analysis.ipynb``:

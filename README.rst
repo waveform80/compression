@@ -9,8 +9,18 @@ architectures and machine sizes.
 Requirements
 ============
 
-You will need the following packages installed if you wish to perform data
-collection with the ``gather.py`` script:
+You will need the following packages installed to read (and play with) the
+analysis in ``analysis.ipynb``::
+
+    $ sudo apt install python3-pip python3-matplotlib python3-docutils jupyter-notebook
+    $ pip3 install --user ipympl
+
+Once the pre-requisites above are installed, simply run ``jupyter notebook`` in
+your clone of the repo, and select ``analysis.ipynb`` in the browser window
+that opens.
+
+If you wish to gather additional data for more platforms, you will need the
+following packages installed:
 
 * python3
 * lz4
@@ -22,19 +32,8 @@ collection with the ``gather.py`` script:
 * plzip
 * lbzip2
 
-You will need the following packages installed to read (and play with) the
-analysis in ``analysis.ipynb``:
-
-* python3-matplotlib
-* python3-docutils
-* jupyter-notebook
-
-Once installed, simply run ``jupyter notebook`` in your clone of the repo, and
-select ``analysis.ipynb`` in the browser window that opens. Depending on the
-version of jupyter available, you may need to run the following to squash the
-"Widget Javascript not detected" warnings:
-
-    $ pip3 install --user ipympl
+The following section goes through the method for providing a suitable input
+for the gather script.
 
 
 Data Gathering

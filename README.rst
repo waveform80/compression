@@ -16,9 +16,10 @@ The following should be sufficient to install the pre-requisites for reading
     $ pip3 install --user ipympl
     $ jupyter notebook
 
-In the browser window that opens, select ``analysis.ipynb`` and go from there
-(skip over the code sections unless you're particularly interested in the
-queries themselves; the prose and the results are the important bits).
+In the browser window that opens, select ``analysis.ipynb`` and then select
+"Cell" and "Run All" from the menu. I'd recommend skipping over the code
+sections unless you're particularly interested in the queries themselves; the
+prose and the results are the important bits.
 
 
 Data Gathering

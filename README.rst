@@ -9,15 +9,20 @@ architectures and machine sizes.
 Requirements
 ============
 
-You will need the following packages installed to read (and play with) the
-analysis in ``analysis.ipynb``::
+The following should be sufficient to install the pre-requisites for reading
+(and playing with) the analysis::
 
     $ sudo apt install python3-pip python3-matplotlib python3-docutils jupyter-notebook
     $ pip3 install --user ipympl
+    $ jupyter notebook
 
-Once the pre-requisites above are installed, simply run ``jupyter notebook`` in
-your clone of the repo, and select ``analysis.ipynb`` in the browser window
-that opens.
+In the browser window that opens, select ``analysis.ipynb`` and go from there
+(skip over the code sections unless you're particularly interested in the
+queries themselves; the prose and the results are the important bits).
+
+
+Data Gathering
+==============
 
 If you wish to gather additional data for more platforms, you will need the
 following packages installed:
@@ -31,13 +36,6 @@ following packages installed:
 * lzip
 * plzip
 * lbzip2
-
-The following section goes through the method for providing a suitable input
-for the gather script.
-
-
-Data Gathering
-==============
 
 We are particularly interested in the compression of an initramfs CPIO archive,
 the compression ratio achieved, the time taken, and the maximum resident memory
